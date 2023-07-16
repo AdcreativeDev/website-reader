@@ -3,3 +3,4 @@ langchain
 openai
 chromadb
 bs4
+tiktoken
