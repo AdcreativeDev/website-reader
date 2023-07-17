@@ -42,7 +42,19 @@ system_openai_api_key = os.environ.get('OPENAI_API_KEY')
 system_openai_api_key = st.text_input(":key: OpenAI Key :", value=system_openai_api_key)
 os.environ["OPENAI_API_KEY"] = system_openai_api_key
 
+
 url = st.text_input("**Step 1 : Enter the web page URL**", "https://edition.cnn.com/world")
+
+with st.expander("Sample URL"):
+    image = Image.open("webreader-sample-1.jpg")
+    st.image(image, caption='https://www.basiclaw.gov.hk/en/basiclaw/chapter3.html')
+
+    image = Image.open("webreader-sample-2.jpg")
+    st.image(image, caption='https://www.td.gov.hk/mini_site/cic/en/laws/cap374.html')
+
+    image = Image.open("webreader-sample-3.jpg")
+    st.image(image, caption='https://www.hr.hku.hk/career_opportunities/how_to_apply.html')
+
 print(f">>>  web page url: {url}")
 
 query = st.text_input("**Step 2 : Enter your query ?**", "Please summarize the content of this web page in point form, and extract 10 keywords")
@@ -76,9 +88,24 @@ if st.button("Submit", type="primary"):
         st.write('✔️ Embedding completed')
 
         # Create a local Chroma vector database from the documents
-        vectordb = Chroma.from_documents(documents=docs, 
-                                        embedding=openai_embeddings,
-                                        persist_directory=DB_DIR)
+        # vectordb = Chroma.from_documents(documents=docs, 
+        #                                 embedding=openai_embeddings,
+        #                                 persist_directory=DB_DIR)
+        vectordb = Chroma.from_documents(
+            documents=docs,
+            embedding=openai_embeddings,
+            persist_directory=DB_DIR,
+            metadata_field="chunk_id"  # Specify a metadata field to store chunk IDs
+        )
+
+        # Add metadata for each chunk
+        for i, chunk in enumerate(docs):
+            chunk_metadata = {
+                "chunk_id": str(i),  # Convert the chunk ID to a string
+                # Add other metadata fields if necessary
+            }
+            vectordb.add_metadata(chunk_metadata)
+
 
         vectordb.persist()
         st.write('✔️ Local VectorDB created completed')
@@ -108,10 +135,6 @@ if st.button("Submit", type="primary"):
         print(f">>> Query result:\n{result}")
 
 
-log = """
- 
-"""        
+
     
-# with st.expander("explanation"):
-#     st.code(log)
 
