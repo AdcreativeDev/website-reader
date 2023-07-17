@@ -76,24 +76,9 @@ if st.button("Submit", type="primary"):
         st.write('✔️ Embedding completed')
 
         # Create a local Chroma vector database from the documents
-        # vectordb = Chroma.from_documents(documents=docs, 
-        #                                 embedding=openai_embeddings,
-        #                                 persist_directory=DB_DIR)
-        vectordb = Chroma.from_documents(
-            documents=docs,
-            embedding=openai_embeddings,
-            persist_directory=DB_DIR,
-            metadata_field="chunk_id"  # Specify a metadata field to store chunk IDs
-        )
-
-        # Add metadata for each chunk
-        for i, chunk in enumerate(docs):
-            chunk_metadata = {
-                "chunk_id": str(i),  # Convert the chunk ID to a string
-                # Add other metadata fields if necessary
-            }
-            vectordb.add_metadata(chunk_metadata)
-
+        vectordb = Chroma.from_documents(documents=docs, 
+                                        embedding=openai_embeddings,
+                                        persist_directory=DB_DIR)
 
         vectordb.persist()
         st.write('✔️ Local VectorDB created completed')
