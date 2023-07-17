@@ -46,13 +46,13 @@ os.environ["OPENAI_API_KEY"] = system_openai_api_key
 url = st.text_input("**Step 1 : Enter the web page URL**", "https://edition.cnn.com/world")
 
 with st.expander("Sample URL"):
-    image = Image.open("webreader-sample-1.jpg")
+    image = Image.open("webreader-sample-1.png")
     st.image(image, caption='https://www.basiclaw.gov.hk/en/basiclaw/chapter3.html')
 
-    image = Image.open("webreader-sample-2.jpg")
+    image = Image.open("webreader-sample-2.png")
     st.image(image, caption='https://www.td.gov.hk/mini_site/cic/en/laws/cap374.html')
 
-    image = Image.open("webreader-sample-3.jpg")
+    image = Image.open("webreader-sample-3.png")
     st.image(image, caption='https://www.hr.hku.hk/career_opportunities/how_to_apply.html')
 
 print(f">>>  web page url: {url}")
