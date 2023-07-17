@@ -8,6 +8,13 @@ from langchain.chains import RetrievalQA
 import streamlit as st
 from PIL import Image
 
+# requirements.txt
+# streamlit
+# langchain
+# openai
+# chromadb
+# bs4
+# tiktoken
 
   
 st.set_page_config(
@@ -29,98 +36,97 @@ st.image(image, caption='created by MJ')
 
 
 
-st.title("🌐 Read your Web Page")
+st.title("🌐 :blue[Webpage Reader]")
 
 system_openai_api_key = os.environ.get('OPENAI_API_KEY')
 system_openai_api_key = st.text_input(":key: OpenAI Key :", value=system_openai_api_key)
 os.environ["OPENAI_API_KEY"] = system_openai_api_key
 
-url = st.text_input("Step 1 : Enter the web page URL", "https://edition.cnn.com/world")
+url = st.text_input("**Step 1 : Enter the web page URL**", "https://edition.cnn.com/world")
 print(f">>>  web page url: {url}")
 
-query = st.text_input("Step 2 : Enter your query ?", "Please summarize the content of this web page in point form, and extract 10 keywords")
+query = st.text_input("**Step 2 : Enter your query ?**", "Please summarize the content of this web page in point form, and extract 10 keywords")
 if st.button("Submit", type="primary"):
-    ABS_PATH: str = os.path.dirname(os.path.abspath(__file__))
-    DB_DIR: str = os.path.join(ABS_PATH, "db")
+    with st.spinner('Generating ...'):
+        st.markdown('#### Extract Process')
+        ABS_PATH: str = os.path.dirname(os.path.abspath(__file__))
+        DB_DIR: str = os.path.join(ABS_PATH, "db")
 
-    # Load data from the specified URL
-    loader = WebBaseLoader(url)
-    data = loader.load()
-    print(f">>> Load data from : {url}")
+        # Load data from the specified URL
+        loader = WebBaseLoader(url)
+        data = loader.load()
+        st.write(f'✔️ Loading website completed :  {url}')
 
-    # Split the loaded data
-    text_splitter = CharacterTextSplitter(separator='\n', 
-                                    chunk_size=1000, 
-                                    chunk_overlap=200)
+        print(f">>> Load data from : {url}")
 
-    docs = text_splitter.split_documents(data)
-
-    no_chunks = len(docs)
-
-    print(f">>> web page split data into : {no_chunks} chunks ") 
-
-
-    # Create OpenAI embeddings
-    openai_embeddings = OpenAIEmbeddings()
-
-    # Create a local Chroma vector database from the documents
-    vectordb = Chroma.from_documents(documents=docs, 
-                                    embedding=openai_embeddings,
-                                    persist_directory=DB_DIR)
-
-    vectordb.persist()
-
-    print(f">>> Save the docs at  a local Chroma vector database at : {DB_DIR}")
-
-    # Create a retriever from the Chroma vector database
-    retriever = vectordb.as_retriever(search_kwargs={"k": 3})
-
-    # Use a ChatOpenAI model
-    #llm = ChatOpenAI(model_name='text-davinci-003')
-    llm = ChatOpenAI()
-
-    # Create a RetrievalQA from the model and retriever
-    qa = RetrievalQA.from_chain_type(llm=llm, chain_type="stuff", retriever=retriever)
-
-    # Run the query and return the result
-    result = qa.run(query)
-    print(f">>> Create RetrievalQA and run query :\n{query}")
+        # Split the loaded data
+        text_splitter = CharacterTextSplitter(separator='\n', 
+                                        chunk_size=1000, 
+                                        chunk_overlap=200)
+        docs = text_splitter.split_documents(data)
+        no_chunks = len(docs)
+        st.write(f'✔️ webpage content chunking completed :  {str(no_chunks)}')
 
 
-    st.write(result)
-    print(f">>> Query result:\n{result}")
+        print(f">>> web page split data into : {no_chunks} chunks ") 
+
+
+        # Create OpenAI embeddings
+        openai_embeddings = OpenAIEmbeddings()
+        st.write('✔️ Embedding completed')
+
+        # Create a local Chroma vector database from the documents
+        # vectordb = Chroma.from_documents(documents=docs, 
+        #                                 embedding=openai_embeddings,
+        #                                 persist_directory=DB_DIR)
+        vectordb = Chroma.from_documents(
+            documents=docs,
+            embedding=openai_embeddings,
+            persist_directory=DB_DIR,
+            metadata_field="chunk_id"  # Specify a metadata field to store chunk IDs
+        )
+
+        # Add metadata for each chunk
+        for i, chunk in enumerate(docs):
+            chunk_metadata = {
+                "chunk_id": str(i),  # Convert the chunk ID to a string
+                # Add other metadata fields if necessary
+            }
+            vectordb.add_metadata(chunk_metadata)
+
+
+        vectordb.persist()
+        st.write('✔️ Local VectorDB created completed')
+
+        print(f">>> Save the docs at  a local Chroma vector database at : {DB_DIR}")
+
+        # Create a retriever from the Chroma vector database
+        retriever = vectordb.as_retriever(search_kwargs={"k": 3})
+
+        # Use a ChatOpenAI model
+        #llm = ChatOpenAI(model_name='text-davinci-003')
+        llm = ChatOpenAI()
+
+        # Create a RetrievalQA from the model and retriever
+        qa = RetrievalQA.from_chain_type(llm=llm, chain_type="stuff", retriever=retriever)
+
+        st.write('✔️ Langchain created and LLM proessing ...')
+
+        # Run the query and return the result
+        result = qa.run(query)
+        print(f">>> Create RetrievalQA and run query :\n{query}")
+        
+        st.write('✔️ LLM query completed  ...')
+
+        st.markdown('#### Query Result"')
+        st.info(result)
+        print(f">>> Query result:\n{result}")
 
 
 log = """
-
-→ Data : WebBaseLoader
-→ Split documents : CharacterTextSplitter
-→ Text embedding: openai
-→ vector stores : Chroma
-→ Agent : N/A
-→ Chain : N/A
-→ LLM search: RetrievalQA
-→ Prompt template: N/A
-
-
-
->>> Load data from : https://www.sandbox.game/en/create/vox-edit/
->>> split data into : <built-in method count of list object at 0x1354b9700> chunks 
->>> Save the docs at  a local Chroma vector database at : /Users/davidcheung/Desktop/Demo/Langchain-website/db
->>> Create RetrievalQA and run query :
-what are product or service in this web page ?
->>> Query result:
-Based on the provided context, the products and services on this web page include:
-
-- Mac (computers)
-- iPad (tablets)
-- iPhone (smartphones)
-- Watch (Apple Watches)
-- TV & Home (Apple TV and related accessories)
-- Accessories for Apple devices
-- Support for Apple devices and services
+ 
 """        
     
-with st.expander("explanation"):
-    st.code(log)
+# with st.expander("explanation"):
+#     st.code(log)
 
